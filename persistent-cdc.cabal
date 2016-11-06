@@ -15,7 +15,9 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Database.Persist.CDC.Class.PersistStoreCDC
+  exposed-modules:     Database.Persist.CDC
+  other-modules:       Database.Persist.CDC.Class.PersistRecordCDC
+                       Database.Persist.CDC.Class.PersistStoreCDC
   build-depends:       base >= 4.7 && < 5
                        , persistent
                        , transformers
