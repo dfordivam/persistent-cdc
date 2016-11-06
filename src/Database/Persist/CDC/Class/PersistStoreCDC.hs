@@ -3,7 +3,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ConstrainedClassMethods #-}
 
-module Database.Persist.Class.PersistStoreCDC
+module Database.Persist.CDC.Class.PersistStoreCDC
     ( 
       PersistStoreCDC (..)
     , PersistRecordCDC (..)
