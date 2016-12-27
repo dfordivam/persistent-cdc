@@ -7,27 +7,24 @@
 module Database.Persist.CDC.Class.PersistRecordCDC
     ( 
       PersistRecordCDC (..)
-    , PersistStoreCDCData (..)
     ) where
 
 import Database.Persist.Class
 import Database.Persist.Types
-
-class (PersistStoreWrite backend) => PersistStoreCDCData backend where
-    type CDCData backend :: *
+import Database.Persist.CDC.Class.PersistStoreCDCType
 
 class (PersistEntity record
-      , PersistStoreCDCData backend
+      , PersistStoreCDCType backend
       , PersistRecordBackend record backend)
     => PersistRecordCDC record backend where
     type EntityHistory record
     getEntityHistory :: (PersistEntity (EntityHistory record)
       , PersistEntityBackend record ~ 
         PersistEntityBackend (EntityHistory record)
-      , PersistStoreCDCData backend
+      , PersistStoreCDCType backend
       , PersistRecordBackend record backend)
-        => Key (CDCData backend)
-            -> backend -- make compiler happy
+        => backend -- make compiler happy
+            -> Key (EditAuthorType backend)
             -> record
             -> record
             -> Key record

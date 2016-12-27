@@ -5,7 +5,7 @@
 
 module Database.Persist.CDC.Class.PersistStoreCDC
     ( 
-      PersistStoreCDC (..)
+      PersistStoreCDC (updateWithCDC)
     ) where
 
 import Control.Monad.IO.Class (MonadIO)
@@ -15,8 +15,9 @@ import Database.Persist.Types
 import Control.Monad (forM_)
 
 import Database.Persist.CDC.Class.PersistRecordCDC
+import Database.Persist.CDC.Class.PersistStoreCDCType
 
-class (PersistStoreCDCData backend) => PersistStoreCDC backend where
+class (PersistStoreCDCType backend) => PersistStoreCDC backend where
     -- | Update individual fields on a specific record.
     updateWithCDC' :: (MonadIO m
       , PersistRecordBackend record backend
@@ -25,7 +26,7 @@ class (PersistStoreCDCData backend) => PersistStoreCDC backend where
       , PersistEntityBackend record ~ 
         PersistEntityBackend (EntityHistory record))
         -- the first arg is dummy, to make compiler happy
-           => backend -> Key (CDCData backend) -> Key record -> [Update record] -> ReaderT backend m ()
+           => backend -> Key (EditAuthorType backend) -> Key record -> [Update record] -> ReaderT backend m ()
 
     updateWithCDC :: (MonadIO m
       , PersistRecordBackend record backend
@@ -33,14 +34,17 @@ class (PersistStoreCDCData backend) => PersistStoreCDC backend where
       , PersistEntity (EntityHistory record)
       , PersistEntityBackend record ~ 
         PersistEntityBackend (EntityHistory record))
-           => Key (CDCData backend) -> Key record -> [Update record] -> ReaderT backend m ()
+           => Key (EditAuthorType backend) 
+              -> Key record
+              -> [Update record]
+              -> ReaderT backend m ()
 
-instance (PersistStoreCDCData backend) => PersistStoreCDC backend where
-    updateWithCDC' backend cdcData entId upds = do
+instance (PersistStoreCDCType backend) => PersistStoreCDC backend where
+    updateWithCDC' backend editAuthorId entId upds = do
       Just old <- get entId
       update entId upds
       Just new <- get entId
-      forM_ (getEntityHistory cdcData backend old new entId) insert
+      forM_ (getEntityHistory backend editAuthorId old new entId) insert
 
     updateWithCDC = updateWithCDC' d
       where d = undefined

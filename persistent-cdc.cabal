@@ -18,6 +18,7 @@ library
   exposed-modules:     Database.Persist.CDC
   other-modules:       Database.Persist.CDC.Class.PersistRecordCDC
                        Database.Persist.CDC.Class.PersistStoreCDC
+                       Database.Persist.CDC.Class.PersistStoreCDCType
   build-depends:       base >= 4.7 && < 5
                        , persistent
                        , transformers
