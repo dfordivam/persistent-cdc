@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies    #-}
-
 module Database.Persist.CDC 
   ( PersistStoreCDC(..)
   , PersistRecordCDC(..)
