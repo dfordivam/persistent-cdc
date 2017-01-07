@@ -16,7 +16,7 @@ import           Data.Maybe (mapMaybe)
 import           Language.Haskell.TH.Syntax
 import           Database.Persist.CDC
 
--- #define DEBUG_TRACE_ENABLED 1
+#define DEBUG_TRACE_ENABLED 1
 #ifdef DEBUG_TRACE_ENABLED
 import           Debug.Trace
 #endif
@@ -29,7 +29,7 @@ import           Debug.Trace
 -- The new EntityDef have a correspoding field to each of the original field
 --
 -- Original 
---  data MyCriticalData = {
+--  data MyData = {
 --      heading :: String
 --    , 
 
@@ -38,17 +38,19 @@ import           Debug.Trace
 -- where the Bool value of True represent change in field data.
 -- 
 share editAuthorIdType fs defs = do
-  newDefs <- mapM (createNewDefAndNewTypeDecs editAuthorIdType) defs
-  let newTypeDecs = concatMap snd newDefs
+  ndefs <- mapM (createNewDefAndNewTypeDecs editAuthorIdType) defs
+  let newTypeDecs = concatMap snd ndefs
+      newDefs = map fst ndefs
 
   -- Call the usual 'share' of persistent-template
-  standardRoutines <- Database.Persist.TH.share fs (defs ++ (map fst newDefs))
+  standardRoutines <- Database.Persist.TH.share fs (defs ++ newDefs)
 
   newRoutines <- mkHistory defs
 
   return $
 #ifdef DEBUG_TRACE_ENABLED
     trace ("New Routines:\n" ++ (show newRoutines) ++
+      "\nNew Defs\n" ++ (show newDefs) ++
       "\nNew Type Decs\n" ++ (show newTypeDecs) ++
       "\nOrig Decs\n" ++ (show defs))
 #endif
@@ -135,16 +137,19 @@ createNewDefAndNewTypeDecs editAuthorIdType def = do
         -- as we create a tuple with Maybe inside it
         newAttr = if isMayBeAttr field then [] else ["Maybe"]
 
+        -- XXX Review this: 
+        newFieldRef =if isMayBeAttr field then NoReference else fieldReference field
+
         newField = field {
             fieldType = newFieldType
-          , fieldAttrs = newAttr}
+          , fieldAttrs = newAttr
+          , fieldReference = newFieldRef}
           -- No change in these
           -- fieldHaskell
           -- fieldDB
           -- fieldType
           -- fieldSqlType
           -- fieldStrict
-          -- fieldReference
 
       return (newField, dec)
 
@@ -243,8 +248,15 @@ mkFieldDiffStatements def (old, new) fdef = do
       ent = (toLower (head entName)) : (tail entName)
   return $ (FunD n [Clause [] decRhs []], n)
 
+instanceD :: Cxt -> Type -> [Dec] -> Dec
+#if MIN_VERSION_template_haskell(2,11,0)
+instanceD = InstanceD Nothing
+#else
+instanceD = InstanceD
+#endif
+
 mkPersistRecordCDCInstance :: EntityDef -> Dec
-mkPersistRecordCDCInstance def = InstanceD cxt typeN decs
+mkPersistRecordCDCInstance def = instanceD cxt typeN decs
   where 
     cxt = [ConT ''PersistRecordBackend `AppT` entType `AppT` backendT,
            ConT ''PersistStoreWrite `AppT` backendT]

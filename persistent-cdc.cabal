@@ -14,19 +14,39 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  hs-source-dirs:      src
-  exposed-modules:     Database.Persist.CDC
-                       Database.Persist.CDC.TH
-  other-modules:       Database.Persist.CDC.Class.PersistRecordCDC
-                       Database.Persist.CDC.Class.PersistStoreCDC
-                       Database.Persist.CDC.Class.PersistStoreCDCType
-  build-depends:       base >= 4.7 && < 5
-                       , persistent
-                       , persistent-template
-                       , template-haskell
-                       , text
-                       , transformers
-  default-language:    Haskell2010
+  hs-source-dirs:       src
+  exposed-modules:      Database.Persist.CDC
+                        Database.Persist.CDC.TH
+  other-modules:        Database.Persist.CDC.Class.PersistRecordCDC
+                        Database.Persist.CDC.Class.PersistStoreCDC
+                        Database.Persist.CDC.Class.PersistStoreCDCType
+  build-depends:        base >= 4.7 && < 5
+                        , persistent
+                        , persistent-template
+                        , template-haskell
+                        , text
+                        , transformers
+  default-language:     Haskell2010
+
+test-suite test
+  type:                 exitcode-stdio-1.0
+  main-is:              main.hs
+  hs-source-dirs:       test
+  other-modules:        BasicTests
+                        PersistTestPetType
+                        PersistTestPetCollarType
+  build-depends:          base >= 4.6 && < 5
+                        , hspec >= 1.3
+                        , HUnit
+                        , text
+                        , aeson
+                        , bytestring
+                        , template-haskell
+                        , transformers
+                        , persistent
+                        , persistent-template
+                        , persistent-cdc
+
 
 source-repository head
   type:     git
