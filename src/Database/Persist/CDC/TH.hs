@@ -69,10 +69,10 @@ createNewDefAndNewTypeDecs editAuthorIdType def = do
         entityHaskell = newHaskellName -- "MyDataHistory"
           , entityDB = newDBName -- "my_data_history"
           , entityFields = editAuthorId : refField : newFields
-          , entityId = newId}
+          , entityId = newId
+          , entityUniques = []}
           -- No change in these
           -- entityAttrs
-          -- entityUniques
           -- entityForeigns
           -- entityDerives
           -- entityExtra
