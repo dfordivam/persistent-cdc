@@ -1,7 +1,12 @@
 
 import Test.Hspec (hspec)
-import BasicTests
+import qualified BasicTests
+import Init (runConn)
 
-main =
+import Database.Persist.Sql (runMigration)
+
+main = do
+  runConn $
+    runMigration BasicTests.testMigrate
   hspec $ do
     BasicTests.specs

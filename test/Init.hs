@@ -260,25 +260,6 @@ db :: SqlPersistT (LoggingT (ResourceT IO)) () -> Assertion
 db actions = do
   runResourceT $ runConn $ actions >> transactionUndo
 
-#if !MIN_VERSION_random(1,0,1)
-instance Random Int32 where
-    random g =
-        let ((i::Int), g') = random g in
-        (fromInteger $ toInteger i, g')
-    randomR (lo, hi) g =
-        let ((i::Int), g') = randomR (fromInteger $ toInteger lo, fromInteger $ toInteger hi) g in
-        (fromInteger $ toInteger i, g')
-
-instance Random Int64 where
-    random g =
-        let ((i0::Int32), g0) = random g
-            ((i1::Int32), g1) = random g0 in
-        (fromInteger (toInteger i0) + fromInteger (toInteger i1) * 2 ^ (32::Int), g1)
-    randomR (lo, hi) g = -- TODO : generate on the whole range, and not only on a part of it
-        let ((i::Int), g') = randomR (fromInteger $ toInteger lo, fromInteger $ toInteger hi) g in
-        (fromInteger $ toInteger i, g')
-#endif
-
 instance Arbitrary PersistValue where
     arbitrary = PersistInt64 `fmap` choose (0, maxBound)
 

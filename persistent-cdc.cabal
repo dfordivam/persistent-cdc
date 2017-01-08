@@ -30,11 +30,13 @@ library
 
 test-suite test
   type:                 exitcode-stdio-1.0
+  default-language:     Haskell2010
   main-is:              main.hs
   hs-source-dirs:       test
   other-modules:        BasicTests
                         PersistTestPetType
                         PersistTestPetCollarType
+                        Init
   build-depends:          base >= 4.6 && < 5
                         , hspec >= 1.3
                         , HUnit
@@ -46,6 +48,13 @@ test-suite test
                         , persistent
                         , persistent-template
                         , persistent-cdc
+                        , QuickCheck
+                        , resourcet
+                        , monad-logger
+                        , fast-logger
+                        , monad-control
+                        , persistent-sqlite
+  cpp-options: -DWITH_SQLITE
 
 
 source-repository head

@@ -9,13 +9,14 @@
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module BasicTests (specs) where
+module BasicTests (specs, testMigrate) where
 
 -- From persistent-test
-import Init
+import Init hiding (share)
 
 import PersistTestPetType
 import PersistTestPetCollarType
@@ -30,7 +31,7 @@ share "PersonId" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteC
 -- Dedented comment
   -- Header-level comment
     -- Indented comment
-  Person json
+  Person
     name Text
     age Int "some ignored -- \" attribute"
     color Text Maybe -- this is a comment sql=foobarbaz
@@ -45,7 +46,7 @@ share "PersonId" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteC
   PersonMaybeAge
     name Text
     age Int Maybe
-  PersonMay json
+  PersonMay
     name Text Maybe
     color Text Maybe
     deriving Show Eq
@@ -106,7 +107,6 @@ share "PersonId" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteC
 instance (PersistStoreWrite backend) => PersistStoreCDCType backend where
   type EditAuthorType backend = Person
 
-
 specs :: Spec
 specs = describe "persistent" $ do
   -- it "fieldLens" $ do
@@ -123,5 +123,4 @@ specs = describe "persistent" $ do
 #else
       ps <- (selectList [FilterOr []] [Desc PersonAge])
 #endif
-      ps `shouldBe` []
-      return ()
+      assertEmpty ps
