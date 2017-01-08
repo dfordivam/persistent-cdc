@@ -54,6 +54,9 @@ test-suite test
                         , fast-logger
                         , monad-control
                         , persistent-sqlite
+                        , conduit
+                        , lifted-base
+                        , unordered-containers
   cpp-options: -DWITH_SQLITE
 
 
