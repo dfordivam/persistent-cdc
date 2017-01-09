@@ -87,6 +87,40 @@ specs = describe "persistent-cdc" $ do
       p1names @== [Just "Miriam", Just "Miriam1", Nothing, Just "Miriam2"]
       p1ages @== [Nothing, Nothing, Just 25, Just 26]
 
+      let p3 = PersonMay (Just "pname") (Just "cname")
+      p3key <- insert p3
+
+      updateWithCDC pkey p3key [PersonMayName =. (Just "pname1")]
+      updateWithCDC pkey p3key [PersonMayColor =. (Just "cname1")]
+
+      updateWithCDC pkey p3key [PersonMayName =. Nothing, PersonMayColor =. (Just "cname2")]
+
+      updateWithCDC pkey p3key [PersonMayName =. (Just "pname2"), PersonMayColor =. (Just "cname3")]
+
+      updateWithCDC pkey p3key [PersonMayName =. Nothing, PersonMayColor =. Nothing]
+      updateWithCDC pkey p3key [PersonMayName =. (Just "pname3")]
+
+      his3 <- selectList [PersonMayHistoryPerson_may ==. p3key][]
+
+      let p3names = (map $ personMayHistoryName . entityVal) his3
+          p3colors = (map $ personMayHistoryColor . entityVal) his3
+
+      p3names @== [
+        (Just "pname", True),
+        (Nothing, False),
+        (Just "pname1", True),
+        (Nothing, True),
+        (Just "pname2", True),
+        (Nothing, True)]
+
+      p3colors @== [
+        (Nothing, False),
+        (Just "cname", True),
+        (Just "cname1", True),
+        (Just "cname2", True),
+        (Just "cname3", True),
+        (Nothing, False)]
+
     it "does nothing for invalid key" $ do
       pending
 
