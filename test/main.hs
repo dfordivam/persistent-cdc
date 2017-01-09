@@ -10,3 +10,4 @@ main = do
     runMigration BasicTests.testMigrate
   hspec $ do
     BasicTests.specs
+    BasicTests.specsCDC
