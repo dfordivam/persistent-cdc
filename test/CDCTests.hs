@@ -100,7 +100,7 @@ specs = describe "persistent-cdc" $ do
       updateWithCDC pkey p3key [PersonMayName =. Nothing, PersonMayColor =. Nothing]
       updateWithCDC pkey p3key [PersonMayName =. (Just "pname3")]
 
-      his3 <- selectList [PersonMayHistoryPerson_may ==. p3key][]
+      his3 <- selectList [PersonMayHistoryPersonMay ==. p3key][]
 
       let p3names = (map $ personMayHistoryName . entityVal) his3
           p3colors = (map $ personMayHistoryColor . entityVal) his3
