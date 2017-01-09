@@ -37,15 +37,18 @@ import           Debug.Trace
 -- But this is not a valid PersistValue, therefore we create '(Maybe a, Bool)'
 -- where the Bool value of True represent change in field data.
 -- 
-share editAuthorIdType fs defs = do
-  ndefs <- mapM (createNewDefAndNewTypeDecs editAuthorIdType) defs
+share editAuthorType fs defs = do
+  ndefs <- mapM (createNewDefAndNewTypeDecs editAuthorType) defs
   let newTypeDecs = concatMap snd ndefs
       newDefs = map fst ndefs
+
+      instDec = mkPersistStoreCDCTypeInstance editAuthorType
 
   -- Call the usual 'share' of persistent-template
   standardRoutines <- Database.Persist.TH.share fs (defs ++ newDefs)
 
   newRoutines <- mkHistory defs
+  
 
   return $
 #ifdef DEBUG_TRACE_ENABLED
@@ -54,13 +57,13 @@ share editAuthorIdType fs defs = do
       "\nNew Type Decs\n" ++ (show newTypeDecs) ++
       "\nOrig Decs\n" ++ (show defs))
 #endif
-    (newTypeDecs ++ standardRoutines ++ newRoutines)
+    (newTypeDecs ++ standardRoutines ++ newRoutines ++ [instDec])
 
 -------------------------------------------------------------------------------------
 -- New EntityDef creation
 -- The Q Monad is required for doing newName in tuple type creation
-createNewDefAndNewTypeDecs :: Text -> EntityDef -> Q (EntityDef, [Dec])
-createNewDefAndNewTypeDecs editAuthorIdType def = do
+createNewDefAndNewTypeDecs :: String -> EntityDef -> Q (EntityDef, [Dec])
+createNewDefAndNewTypeDecs editAuthorType def = do
   a <- mapM getNewField $ entityFields def
   let newFields = map fst a
       newTypeDecs = mapMaybe snd a
@@ -86,6 +89,7 @@ createNewDefAndNewTypeDecs editAuthorIdType def = do
     -- "my_data_history"
     newDBName = concatString def DBName unDBName entityDB "_history"
 
+    editAuthorIdType = pack $ editAuthorType ++ "Id"
     -- User specified EditAuthorType' Id
     editAuthorId = FieldDef {
         fieldHaskell = HaskellName $ "editAuthorId"
@@ -255,8 +259,22 @@ instanceD = InstanceD Nothing
 instanceD = InstanceD
 #endif
 
+mkPersistStoreCDCTypeInstance :: String -> Dec
+mkPersistStoreCDCTypeInstance editAuthorType =
+  instanceD cxt typeN decs
+  where 
+    cxt = [ConT ''PersistStoreWrite `AppT` backendT]
+    typeN = ConT ''PersistStoreCDCType `AppT` backendT
+
+    backendT = VarT (mkName "backend")
+
+    decs = [typeInst]
+    typeInst = TySynInstD ''EditAuthorType $
+                TySynEqn [backendT] (ConT $ mkName editAuthorType)
+
 mkPersistRecordCDCInstance :: EntityDef -> Dec
-mkPersistRecordCDCInstance def = instanceD cxt typeN decs
+mkPersistRecordCDCInstance def =
+  instanceD cxt typeN decs
   where 
     cxt = [ConT ''PersistRecordBackend `AppT` entType `AppT` backendT,
            ConT ''PersistStoreWrite `AppT` backendT]

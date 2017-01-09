@@ -29,7 +29,7 @@ import Database.Persist.TH hiding (share)
 import Database.Persist.CDC
 import Database.Persist.CDC.TH (share)
 
-share "PersonId" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteCascade persistSettings, mkSave "_ignoredSave"] [persistLowerCase|
+share "Person" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteCascade persistSettings, mkSave "_ignoredSave"] [persistLowerCase|
 
 -- Dedented comment
   -- Header-level comment
@@ -109,9 +109,6 @@ share "PersonId" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteC
 
 deriving instance Show (BackendKey backend) => Show (PetGeneric backend)
 deriving instance Eq (BackendKey backend) => Eq (PetGeneric backend)
-
-instance (PersistStoreWrite backend) => PersistStoreCDCType backend where
-  type EditAuthorType backend = Person
 
 cleanDB :: (MonadIO m, PersistQuery backend, PersistEntityBackend Person ~ backend) => ReaderT backend m ()
 cleanDB = do
