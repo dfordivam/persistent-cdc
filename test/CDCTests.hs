@@ -53,7 +53,7 @@ specs = describe "persistent-cdc" $ do
       updateWithCDC pkey pet2key [MaybeOwnedPetName =. "pet2"]
       updateWithCDC pkey emailkey [EmailPTUser =. Nothing]
 
-    it "captures change in data" $ db $ do
+    it "captures old value only of the changed data" $ db $ do
       let mic26 = Person "Michael" 26 Nothing
       micK <- insert mic26
 
@@ -61,9 +61,31 @@ specs = describe "persistent-cdc" $ do
 
       Just (Entity _ phis1) <- selectFirst [PersonHistoryPerson ==. micK][Desc PersonHistoryId]
       personHistoryAge phis1 @== Just 26
+      personHistoryName phis1 @== Nothing
+      personHistoryColor phis1 @== (Nothing, False)
 
-    it "keeps complete history" $ do
-      pending
+    it "keeps complete history" $ db $ do
+      let p = Person "pname" 1 Nothing
+      pkey <- insert p
+
+      let p1 = Person1 "Miriam" 25
+      p1key <- insert p1
+
+      updateWithCDC pkey p1key [Person1Name =. "Miriam1"]
+
+      updateWithCDC pkey p1key [Person1Name =. "Miriam2"]
+
+      updateWithCDC pkey p1key [Person1Age =. 26]
+
+      updateWithCDC pkey p1key [Person1Name =. "Miriam3", Person1Age =. 27]
+
+      his <- selectList [Person1HistoryPerson1 ==. p1key][]
+
+      let p1names = (map $ person1HistoryName . entityVal) his
+          p1ages = (map $ person1HistoryAge . entityVal) his
+
+      p1names @== [Just "Miriam", Just "Miriam1", Nothing, Just "Miriam2"]
+      p1ages @== [Nothing, Nothing, Just 25, Just 26]
 
     it "does nothing for invalid key" $ do
       pending
