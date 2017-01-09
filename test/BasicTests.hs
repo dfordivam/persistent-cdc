@@ -947,8 +947,14 @@ specsCDC = describe "persistent-cdc" $ do
       updateWithCDC pkey pet2key [MaybeOwnedPetName =. "pet2"]
       updateWithCDC pkey emailkey [EmailPTUser =. Nothing]
 
-    it "captures change in data" $ do
-      pending
+    it "captures change in data" $ db $ do
+      let mic26 = Person "Michael" 26 Nothing
+      micK <- insert mic26
+
+      updateWithCDC micK micK [PersonAge =. 28]
+
+      Just (Entity _ phis1) <- selectFirst [PersonHistoryPerson ==. micK][Desc PersonHistoryId]
+      personHistoryAge phis1 @== Just 26
 
     it "keeps complete history" $ do
       pending
