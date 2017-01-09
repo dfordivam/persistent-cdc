@@ -99,7 +99,7 @@ createNewDefAndNewTypeDecs editAuthorIdType def = do
 
     -- This stores the reference of original Entity
     refField = FieldDef {
-        fieldHaskell = HaskellName $ unDBName (entityDB def)
+        fieldHaskell = entityHaskell def
       , fieldDB = entityDB def
       , fieldType = FTTypeCon Nothing
         (concatString def id unHaskellName entityHaskell "Id")
