@@ -37,6 +37,8 @@ test-suite test
                         PersistTestPetType
                         PersistTestPetCollarType
                         Init
+                        Model
+                        CDCTests
   build-depends:          base >= 4.6 && < 5
                         , hspec >= 1.3
                         , HUnit

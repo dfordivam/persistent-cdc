@@ -1,30 +1,15 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE EmptyDataDecls #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
 
-module BasicTests (specs, specsCDC, testMigrate) where
+module BasicTests (specs, testMigrate) where
 
--- From persistent-test
-import Init hiding (share)
+import Init
+import Model
 
-import PersistTestPetType
-import PersistTestPetCollarType
-
-import Database.Persist.TH hiding (share)
 import Database.Persist.CDC
-import Database.Persist.CDC.TH (share)
+
 import Control.Monad.Trans.Resource (runResourceT)
 import Data.Conduit
 import Data.Maybe (fromJust)
@@ -35,100 +20,6 @@ import Control.Exception (SomeException)
 import qualified Data.Conduit.List as CL
 import qualified Data.HashMap.Lazy as M
 import qualified Data.Text as T
-
-share "PersonId" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteCascade persistSettings, mkSave "_ignoredSave"] [persistLowerCase|
-
-
--- Dedented comment
-  -- Header-level comment
-    -- Indented comment
-  Person
-    name Text
-    age Int "some ignored -- \" attribute"
-    color Text Maybe -- this is a comment sql=foobarbaz
-    PersonNameKey name -- this is a comment sql=foobarbaz
-    deriving Show Eq
-  Person1
--- Dedented comment
-  -- Header-level comment
-    -- Indented comment
-    name Text
-    age Int
-  PersonMaybeAge
-    name Text
-    age Int Maybe
-  PersonMay
-    name Text Maybe
-    color Text Maybe
-    deriving Show Eq
-  Pet
-    ownerId PersonId
-    name Text
-    -- deriving Show Eq
--- Dedented comment
-  -- Header-level comment
-    -- Indented comment
-    type PetType
-  MaybeOwnedPet
-    ownerId PersonId Maybe
-    name Text
-    type PetType
--- Dedented comment
-  -- Header-level comment
-    -- Indented comment
-  NeedsPet
-    petKey PetId
-  OutdoorPet
-    ownerId PersonId
-    collar PetCollar
-    type PetType
-
---  -- From the scaffold
-  UserPT
-    ident Text
-    password Text Maybe
-    UniqueUserPT ident
-  EmailPT
-    email Text
-    user UserPTId Maybe
-    verkey Text Maybe
-    UniqueEmailPT email
-
-  Upsert
-    email Text
-    counter Int
-    UniqueUpsert email
-    deriving Show
-
-  UpsertBy
-    email Text
-    city Text
-    state Text
-    counter Int
-    UniqueUpsertBy email
-    UniqueUpsertByCityState city state
-    deriving Show
-
-  Strict
-    !yes Int
-    ~no Int
-    def Int
-|]
-
-deriving instance Show (BackendKey backend) => Show (PetGeneric backend)
-deriving instance Eq (BackendKey backend) => Eq (PetGeneric backend)
-
-instance (PersistStoreWrite backend) => PersistStoreCDCType backend where
-  type EditAuthorType backend = Person
-
-cleanDB :: (MonadIO m, PersistQuery backend, PersistEntityBackend Person ~ backend) => ReaderT backend m ()
-cleanDB = do
-  deleteWhere ([] :: [Filter Person])
-  deleteWhere ([] :: [Filter Person1])
-  deleteWhere ([] :: [Filter Pet])
-  deleteWhere ([] :: [Filter MaybeOwnedPet])
-  deleteWhere ([] :: [Filter NeedsPet])
-  deleteWhere ([] :: [Filter OutdoorPet])
 
 -- These tests are for basic persistent functionality.
 -- These ensure that there is no breakage due to CDC.
@@ -901,75 +792,3 @@ specs = describe "persistent" $ do
     it "works for [Maybe Text]" $ runArrayAggTest "password" [Nothing, Just "b", Just "d", Just "h" :: Maybe Text]
 #endif
 #endif
-
-specsCDC :: Spec
-specsCDC = describe "persistent-cdc" $ do
-  describe "share" $ do
-    it "Creates History Data structures" $ do
-      pending
-
-  describe "updateWithCDC" $ do
-    it "works for every data" $ db $ do
-      let p = Person "z" 1 Nothing
-          p1 = Person1 "Miriam" 25
-          p2 = PersonMaybeAge "Michael" Nothing
-          p3 = PersonMay (Just "Eliezer") (Just "Red")
-
-          user = UserPT "c" $ Just "d"
-
-      pkey <- insert p
-      p1key <- insert p1
-      p2key <- insert p2
-      p3key <- insert p3
-      userkey <- insert user
-
-      let mittensCollar = PetCollar "Mittens\n1-714-668-9672" True
-          outPet = OutdoorPet pkey mittensCollar Cat
-          email = EmailPT "somemailid" (Just userkey) Nothing
-          pet = Pet pkey "Mittens" Cat
-          pet2 = MaybeOwnedPet (Just pkey) "Mittens" Cat
-
-      petkey <- insert pet
-      pet2key <- insert pet2
-      emailkey <- insert email
-      outPetkey <- insert outPet
-
-      let needsPet = NeedsPet petkey
-      needsPetKey <- insert needsPet
-
-      updateWithCDC pkey pkey [PersonAge =. 2]
-      updateWithCDC pkey p1key [Person1Age =. 24]
-      updateWithCDC pkey p2key [PersonMaybeAgeAge =. Just 24]
-      updateWithCDC pkey p3key [PersonMayColor =. Just "Blue"]
-      updateWithCDC pkey userkey [UserPTPassword =. Just "n"]
-      updateWithCDC pkey petkey [PetName =. "pet"]
-      updateWithCDC pkey outPetkey [OutdoorPetType =. Dog]
-      updateWithCDC pkey pet2key [MaybeOwnedPetName =. "pet2"]
-      updateWithCDC pkey emailkey [EmailPTUser =. Nothing]
-
-    it "captures change in data" $ db $ do
-      let mic26 = Person "Michael" 26 Nothing
-      micK <- insert mic26
-
-      updateWithCDC micK micK [PersonAge =. 28]
-
-      Just (Entity _ phis1) <- selectFirst [PersonHistoryPerson ==. micK][Desc PersonHistoryId]
-      personHistoryAge phis1 @== Just 26
-
-    it "keeps complete history" $ do
-      pending
-
-    it "does nothing for invalid key" $ do
-      pending
-
-    it "does nothing for empty update" $ do
-      pending
-
-    it "does not add history object if no change" $ do
-      pending
-
-    it "adds one history object per update" $ do
-      pending
-
-    it "behaves same as update for original data" $ do
-      pending

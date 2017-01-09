@@ -1,6 +1,7 @@
 
 import Test.Hspec (hspec)
 import qualified BasicTests
+import qualified CDCTests
 import Init (runConn)
 
 import Database.Persist.Sql (runMigration)
@@ -10,4 +11,4 @@ main = do
     runMigration BasicTests.testMigrate
   hspec $ do
     BasicTests.specs
-    BasicTests.specsCDC
+    CDCTests.specs
