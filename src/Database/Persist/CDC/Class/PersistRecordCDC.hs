@@ -12,6 +12,7 @@ module Database.Persist.CDC.Class.PersistRecordCDC
 import Database.Persist.Class
 import Database.Persist.Types
 import Database.Persist.CDC.Class.PersistStoreCDCType
+import Data.Time
 
 class (PersistEntity record
       , PersistStoreCDCType backend
@@ -25,6 +26,7 @@ class (PersistEntity record
       , PersistRecordBackend record backend)
         => backend -- make compiler happy
             -> Key (EditAuthorType backend)
+            -> UTCTime
             -> record
             -> record
             -> Key record

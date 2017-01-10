@@ -7,6 +7,7 @@ import Init
 import Model
 
 import Database.Persist.CDC
+import Data.Time
 
 specs :: Spec
 specs = describe "persistent-cdc" $ do
@@ -63,6 +64,8 @@ specs = describe "persistent-cdc" $ do
       personHistoryAge phis1 @== Just 26
       personHistoryName phis1 @== Nothing
       personHistoryColor phis1 @== (Nothing, False)
+      -- t <- liftIO $ getCurrentTime
+      -- personHistoryTimeStamp phis1 @== t
 
     it "keeps complete history" $ db $ do
       let p = Person "pname" 1 Nothing

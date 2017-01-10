@@ -29,6 +29,8 @@ import Database.Persist.TH hiding (share)
 import Database.Persist.CDC
 import Database.Persist.CDC.TH (share)
 
+import Data.Time
+
 share "Person" [mkPersist persistSettings,  mkMigrate "testMigrate", mkDeleteCascade persistSettings, mkSave "_ignoredSave"] [persistLowerCase|
 
 -- Dedented comment

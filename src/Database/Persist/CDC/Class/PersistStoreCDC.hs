@@ -8,7 +8,7 @@ module Database.Persist.CDC.Class.PersistStoreCDC
       PersistStoreCDC (updateWithCDC)
     ) where
 
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Trans.Reader (ReaderT)
 import Database.Persist.Class
 import Database.Persist.Types
@@ -16,6 +16,8 @@ import Control.Monad (forM_)
 
 import Database.Persist.CDC.Class.PersistRecordCDC
 import Database.Persist.CDC.Class.PersistStoreCDCType
+
+import Data.Time
 
 class (PersistStoreCDCType backend) => PersistStoreCDC backend where
     -- | Update individual fields on a specific record.
@@ -44,7 +46,8 @@ instance (PersistStoreCDCType backend) => PersistStoreCDC backend where
       Just old <- get entId
       update entId upds
       Just new <- get entId
-      forM_ (getEntityHistory backend editAuthorId old new entId) insert
+      t <- liftIO getCurrentTime
+      forM_ (getEntityHistory backend editAuthorId t old new entId) insert
 
     updateWithCDC = updateWithCDC' d
       where d = undefined

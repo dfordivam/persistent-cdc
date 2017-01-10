@@ -12,6 +12,7 @@ import           Control.Monad (forM)
 import           Data.Text (pack, unpack, Text)
 import           Data.Char (toLower, toUpper)
 import           Data.Maybe (mapMaybe)
+import           Data.Time
 
 import           Language.Haskell.TH.Syntax
 import           Database.Persist.CDC
@@ -71,7 +72,7 @@ createNewDefAndNewTypeDecs editAuthorType def = do
       newEntityDef = def {
         entityHaskell = newHaskellName -- "MyDataHistory"
           , entityDB = newDBName -- "my_data_history"
-          , entityFields = editAuthorId : refField : newFields
+          , entityFields = editAuthorId : refField : timeStamp : newFields
           , entityId = newId
           , entityUniques = []}
           -- No change in these
@@ -111,6 +112,15 @@ createNewDefAndNewTypeDecs editAuthorType def = do
       , fieldAttrs = []
       , fieldStrict = True
       , fieldReference = NoReference
+    }
+
+    timeStamp = FieldDef {fieldHaskell = HaskellName {unHaskellName = "timeStamp"},
+      fieldDB = DBName {unDBName = "time_stamp"},
+      fieldType = FTTypeCon Nothing "UTCTime",
+      fieldSqlType = SqlDayTime, -- XXX Mongo Day time type
+      fieldAttrs = [],
+      fieldStrict = True,
+      fieldReference = NoReference
     }
 
     -- Id field for the new history entity
@@ -190,6 +200,7 @@ mkHistory decs = do
 mkGetEntityHistoryFun :: EntityDef -> Q Dec
 mkGetEntityHistoryFun def = do
   editAuthorId <- newName "editAuthorId"
+  timeStamp <- newName "timeStamp"
   old <- newName "old"
   new <- newName "new"
   idn <- newName "id"
@@ -201,7 +212,7 @@ mkGetEntityHistoryFun def = do
   dummy <- newName "dummy"
   let
     clause = 
-      Clause [VarP dummy, VarP editAuthorId, VarP old, VarP new, VarP idn] body decs
+      Clause [VarP dummy, VarP editAuthorId, VarP timeStamp, VarP old, VarP new, VarP idn] body decs
 
     -- AHistory aField1 aField2 ...
     body = NormalB (ConE 'Just `AppE` VarE conVarName)
@@ -209,7 +220,7 @@ mkGetEntityHistoryFun def = do
 
     -- Constructor Dec - AppE all the fields to construct History data
     con = ValD (VarP conVarName) 
-            (NormalB (zipAppE (ConE conName : VarE editAuthorId : fieldVars))) []
+            (NormalB (zipAppE (ConE conName : fieldVars))) []
       where conName = mkName (historyDataName def)
             zipAppE :: [Exp] -> Exp
             zipAppE (x:y:xs) =
@@ -217,7 +228,7 @@ mkGetEntityHistoryFun def = do
                 [] -> x `AppE` y
                 _ -> zipAppE ((x `AppE` y) : xs)
 
-            fieldVars = VarE idn : map VarE (map snd fields)
+            fieldVars = VarE editAuthorId : VarE idn : VarE timeStamp : map VarE (map snd fields)
 
   return $ FunD (mkName (getEntityHistoryFunName def)) [clause]
 
