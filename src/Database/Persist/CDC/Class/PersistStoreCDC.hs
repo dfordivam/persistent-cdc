@@ -5,7 +5,7 @@
 
 module Database.Persist.CDC.Class.PersistStoreCDC
     ( 
-      PersistStoreCDC (updateWithCDC)
+      PersistStoreCDC (updateWithCDC, replaceWithCDC)
     ) where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
@@ -41,6 +41,26 @@ class (PersistStoreCDCType backend) => PersistStoreCDC backend where
               -> [Update record]
               -> ReaderT backend m ()
 
+    replaceWithCDC' :: (MonadIO m
+      , PersistRecordBackend record backend
+      , PersistRecordCDC record backend
+      , PersistEntity (EntityHistory record)
+      , PersistEntityBackend record ~ 
+        PersistEntityBackend (EntityHistory record))
+        -- the first arg is dummy, to make compiler happy
+           => backend -> Key (EditAuthorType backend) -> Key record -> record -> ReaderT backend m ()
+
+    replaceWithCDC :: (MonadIO m
+      , PersistRecordBackend record backend
+      , PersistRecordCDC record backend
+      , PersistEntity (EntityHistory record)
+      , PersistEntityBackend record ~ 
+        PersistEntityBackend (EntityHistory record))
+           => Key (EditAuthorType backend) 
+              -> Key record
+              -> record
+              -> ReaderT backend m ()
+
 instance (PersistStoreCDCType backend) => PersistStoreCDC backend where
     updateWithCDC' backend editAuthorId entId upds = do
       Just old <- get entId
@@ -50,4 +70,13 @@ instance (PersistStoreCDCType backend) => PersistStoreCDC backend where
       forM_ (getEntityHistory backend editAuthorId t old new entId) insert
 
     updateWithCDC = updateWithCDC' d
+      where d = undefined
+
+    replaceWithCDC' backend editAuthorId entId new = do
+      Just old <- get entId
+      replace entId new
+      t <- liftIO getCurrentTime
+      forM_ (getEntityHistory backend editAuthorId t old new entId) insert
+
+    replaceWithCDC = replaceWithCDC' d
       where d = undefined
