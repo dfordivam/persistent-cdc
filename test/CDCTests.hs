@@ -13,7 +13,7 @@ specs :: Spec
 specs = describe "persistent-cdc" $ do
   describe "share" $ do
     it "Creates History Data structures" $ do
-      pending
+      pendingWith "May be not required to test this"
 
   describe "updateWithCDC" $ do
     it "works for every data" $ db $ do

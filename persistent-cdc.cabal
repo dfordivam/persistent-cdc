@@ -34,6 +34,41 @@ test-suite test
   default-language:     Haskell2010
   main-is:              main.hs
   hs-source-dirs:       test
+  other-modules:        
+                        PersistTestPetType
+                        PersistTestPetCollarType
+                        Init
+                        Model
+                        MultiModel
+                        CDCTests
+  build-depends:          base >= 4.6 && < 5
+                        , hspec >= 1.3
+                        , HUnit
+                        , text
+                        , aeson
+                        , bytestring
+                        , template-haskell
+                        , transformers
+                        , persistent
+                        , persistent-template
+                        , persistent-cdc
+                        , QuickCheck
+                        , resourcet
+                        , monad-logger
+                        , fast-logger
+                        , monad-control
+                        , persistent-sqlite
+                        , conduit
+                        , lifted-base
+                        , unordered-containers
+                        , time
+  cpp-options: -DWITH_SQLITE
+
+test-suite full
+  type:                 exitcode-stdio-1.0
+  default-language:     Haskell2010
+  main-is:              main.hs
+  hs-source-dirs:       test
   other-modules:        BasicTests
                         PersistTestPetType
                         PersistTestPetCollarType
@@ -61,7 +96,39 @@ test-suite test
                         , lifted-base
                         , unordered-containers
                         , time
-  cpp-options: -DWITH_SQLITE
+  cpp-options: -DWITH_SQLITE -DDO_BASIC_TESTS
+
+test-suite multimodel
+  type:                 exitcode-stdio-1.0
+  default-language:     Haskell2010
+  main-is:              main.hs
+  hs-source-dirs:       test
+  other-modules:        
+                        Init
+                        MultiModel
+                        MultiModelTests
+  build-depends:          base >= 4.6 && < 5
+                        , hspec >= 1.3
+                        , HUnit
+                        , text
+                        , aeson
+                        , bytestring
+                        , template-haskell
+                        , transformers
+                        , persistent
+                        , persistent-template
+                        , persistent-cdc
+                        , QuickCheck
+                        , resourcet
+                        , monad-logger
+                        , fast-logger
+                        , monad-control
+                        , persistent-sqlite
+                        , conduit
+                        , lifted-base
+                        , unordered-containers
+                        , time
+  cpp-options: -DWITH_SQLITE -DDO_MULTI_MODEL_TESTS
 
 
 source-repository head
