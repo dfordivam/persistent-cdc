@@ -3,11 +3,10 @@
 Use this library to enable change data capture when using persistent.
 
 Usage:
-1. Use the `share` provided by `Database.Persist.CDC.TH`.
-2. Use `updateWithCDC` or `replaceWithCDC` API in place of `update` and `replace` to capture changes.
+  1. Use the `share` provided by `Database.Persist.CDC.TH`.
+  2. Use `updateWithCDC` or `replaceWithCDC` API in place of `update` and `replace` to capture changes.
 
-Features:
-1. The `share` API will create additional data for every entry
+The `share` API will create additional data for every entry
 
 For example 
 
