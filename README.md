@@ -17,7 +17,7 @@ share "User" [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
     email Text
     password ByteString
 
-  Post
+  Wiki
     title Text
     overview Text Maybe
     content Text
@@ -33,10 +33,10 @@ data User = User {
   userPassword  :: ByteString
 }
 
-data Post = Post {
-  postTitle     :: Text,
-  postOverview  :: Maybe Text,
-  postContent   :: Text
+data Wiki = Wiki {
+  wikiTitle     :: Text,
+  wikiOverview  :: Maybe Text,
+  wikiContent   :: Text
 }
 
 data UserHistory = UserHistory {
@@ -48,13 +48,13 @@ data UserHistory = UserHistory {
   userHistoryPassword     :: Maybe ByteString
 }
 
-data PostHistory = PostHistory {
-  postHistoryEditAuthorId :: UserId,
-  postHistoryPost         :: PostId,
-  postHistoryTimeStamp    :: UTCTime,
-  postHistoryTitle        :: Maybe Text,
-  postHistoryOverview     :: (Maybe Text, Bool),
-  postHistoryContent      :: Maybe Text
+data WikiHistory = WikiHistory {
+  wikiHistoryEditAuthorId :: UserId,
+  wikiHistoryWiki         :: WikiId,
+  wikiHistoryTimeStamp    :: UTCTime,
+  wikiHistoryTitle        :: Maybe Text,
+  wikiHistoryOverview     :: (Maybe Text, Bool),
+  wikiHistoryContent      :: Maybe Text
 }
 ```
 
@@ -71,6 +71,37 @@ The fields in these data type are described below
     If the original data definition had `Maybe` attribute to a field then we create 
     a tuple of original data with Bool. The value of Bool determines whether there is 
     any change in the data.
-    So if `postOverview` got modified from `Nothing` to `Just "overview"` then the
+    So if `wikiOverview` got modified from `Nothing` to `Just "overview"` then the
     history will contain `(Nothing, True)` and if there is no change it will have
     `(Nothing, False)`.
+
+These APIs are available to modify the data and capture the change automatically 
+in history objects.
+
+```haskell
+    updateWithCDC ::
+           => Key (EditAuthorType backend) 
+              -> Key record
+              -> [Update record]
+              -> ReaderT backend m ()
+
+    replaceWithCDC ::
+           => Key (EditAuthorType backend) 
+              -> Key record
+              -> record
+              -> ReaderT backend m ()
+```
+
+Example yesod code to handle update
+
+```haskell
+-- postEditWikiR :: WikiId -> Handler Html
+postEditWikiR wikiKey = do
+
+    userKey <- getCurrentUser -- some API to get current user
+                              -- maybeAuthId etc.
+
+    updateWithCDC userKey wikiKey [WikiContent =. newContent]
+    ...
+
+```
